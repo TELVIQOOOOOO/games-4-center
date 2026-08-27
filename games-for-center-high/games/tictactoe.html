@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe — GAMES FOR CENTER HIGH</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  #board{display:grid;grid-template-columns:repeat(3,90px);grid-template-rows:repeat(3,90px);gap:8px;}
+  .cell{background:#1c2040;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:44px;font-weight:800;cursor:pointer;}
+  .cell.x{color:#37f0ff;} .cell.o{color:#ff2e88;}
+</style>
+</head><body>
+<script src="../access.js"></script>
+<script>if(!chgIsUnlocked()){location.href="../index.html";}</script>
+
+<div class="game-top"><a class="back" href="../index.html">← Arcade</a><div class="title">❌ Tic Tac Toe</div><div style="width:70px;"></div></div>
+
+<div class="game-stage">
+  <div class="hud"><div class="stat">X wins <b id="xw">0</b></div><div class="stat">O wins <b id="ow">0</b></div></div>
+  <div id="board"></div>
+  <div class="overlay-msg" id="msg">X's turn</div>
+  <button class="mini-btn" id="restart">New round</button>
+  <div class="controls-hint">2 players, same device — take turns tapping a square.</div>
+</div>
+
+<script>
+const boardEl=document.getElementById('board'), msg=document.getElementById('msg');
+const xwEl=document.getElementById('xw'), owEl=document.getElementById('ow');
+let cells, turn, over, xw=0, ow=0;
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function reset(){
+  cells=Array(9).fill(null); turn='X'; over=false; msg.textContent="X's turn";
+  render();
+}
+function render(){
+  boardEl.innerHTML='';
+  cells.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='cell'+(v?(' '+v.toLowerCase()):'');
+    d.textContent=v||'';
+    d.addEventListener('click', ()=>play(i));
+    boardEl.appendChild(d);
+  });
+}
+function play(i){
+  if(over || cells[i]) return;
+  cells[i]=turn;
+  const win = LINES.find(l=>l.every(idx=>cells[idx]===turn));
+  if(win){
+    over=true; msg.textContent = turn+' wins!';
+    if(turn==='X'){ xw++; xwEl.textContent=xw; } else { ow++; owEl.textContent=ow; }
+  } else if(cells.every(c=>c)){
+    over=true; msg.textContent="It's a draw!";
+  } else {
+    turn = turn==='X'?'O':'X';
+    msg.textContent = turn+"'s turn";
+  }
+  render();
+}
+document.getElementById('restart').addEventListener('click', reset);
+reset();
+</script>
+</body></html>

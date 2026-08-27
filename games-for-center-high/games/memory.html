@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match — GAMES FOR CENTER HIGH</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  #board{display:grid;grid-template-columns:repeat(4,74px);gap:10px;}
+  .card{width:74px;height:74px;border-radius:10px;background:#1c2040;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;user-select:none;transition:transform .15s;}
+  .card.flip{background:#2a2f57;}
+  .card.matched{background:#12331f;border-color:#38ffab;}
+</style>
+</head><body>
+<script src="../access.js"></script>
+<script>if(!chgIsUnlocked()){location.href="../index.html";}</script>
+
+<div class="game-top"><a class="back" href="../index.html">← Arcade</a><div class="title">🧠 Memory Match</div><div style="width:70px;"></div></div>
+
+<div class="game-stage">
+  <div class="hud"><div class="stat">Moves <b id="moves">0</b></div><div class="stat">Best <b id="best">—</b></div></div>
+  <div id="board"></div>
+  <div class="overlay-msg" id="msg"></div>
+  <button class="mini-btn" id="restart">Restart</button>
+</div>
+
+<script>
+const ICONS = ['🍕','🎮','🚀','🐉','🎧','⚡','🏀','🍩'];
+const boardEl=document.getElementById('board'), movesEl=document.getElementById('moves'), bestEl=document.getElementById('best'), msg=document.getElementById('msg');
+let best = localStorage.getItem('chg_memory_best'); bestEl.textContent = best || '—';
+let cards, flipped, matched, moves, lock;
+
+function reset(){
+  const deck = [...ICONS, ...ICONS];
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  cards = deck; flipped=[]; matched=[]; moves=0; lock=false; msg.textContent='';
+  movesEl.textContent=0;
+  boardEl.innerHTML='';
+  cards.forEach((icon,i)=>{
+    const d=document.createElement('div');
+    d.className='card';
+    d.dataset.i=i;
+    d.addEventListener('click', ()=>flip(i));
+    boardEl.appendChild(d);
+  });
+}
+function flip(i){
+  if(lock || flipped.includes(i) || matched.includes(i)) return;
+  const el = boardEl.children[i];
+  el.textContent = cards[i]; el.classList.add('flip');
+  flipped.push(i);
+  if(flipped.length===2){
+    moves++; movesEl.textContent=moves;
+    lock=true;
+    const [a,b]=flipped;
+    if(cards[a]===cards[b]){
+      matched.push(a,b);
+      boardEl.children[a].classList.add('matched');
+      boardEl.children[b].classList.add('matched');
+      flipped=[]; lock=false;
+      if(matched.length===cards.length) finish();
+    } else {
+      setTimeout(()=>{
+        boardEl.children[a].textContent=''; boardEl.children[a].classList.remove('flip');
+        boardEl.children[b].textContent=''; boardEl.children[b].classList.remove('flip');
+        flipped=[]; lock=false;
+      },700);
+    }
+  }
+}
+function finish(){
+  msg.textContent = 'Solved in ' + moves + ' moves!';
+  if(!best || moves < parseInt(best)){
+    best = moves; localStorage.setItem('chg_memory_best', best); bestEl.textContent = best;
+  }
+}
+document.getElementById('restart').addEventListener('click', reset);
+reset();
+</script>
+</body></html>
