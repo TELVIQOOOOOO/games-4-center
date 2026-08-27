@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAMES FOR CENTER HIGH — from danny(heh)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="marquee">
+  <div class="bulbs"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <h1>GAMES FOR CENTER HIGH</h1>
+  <div class="tag">from danny(heh)</div>
+</div>
+
+<div class="wrap">
+
+  <!-- PAYWALL (shown until unlocked) -->
+  <div id="paywall" class="panel paywall">
+    <div class="lock">🔒</div>
+    <h2>Full Arcade Access</h2>
+    <p class="price">$4.99</p>
+    <p class="sub">20+ games · unlocked once, play forever on this device</p>
+    <button class="btn btn-buy" id="buyBtn">Pay &amp; Unlock</button>
+    <div class="msg" id="payMsg"></div>
+
+    <div class="promo-row">
+      <input type="text" id="promoInput" placeholder="GOT A CODE? ENTER IT" maxlength="20">
+      <button id="promoBtn">Unlock</button>
+    </div>
+    <div class="msg" id="promoMsg"></div>
+  </div>
+
+  <!-- GAME HUB (shown after unlock) -->
+  <div id="hub" style="display:none;">
+    <div class="grid-head">
+      <h2>Pick a game</h2>
+      <span class="count" id="gameCount"></span>
+    </div>
+    <div class="game-grid" id="gameGrid"></div>
+  </div>
+
+</div>
+
+<footer class="site">
+  GAMES FOR CENTER HIGH · from danny(heh) · <a href="admin.html">admin</a>
+</footer>
+
+<script src="access.js"></script>
+<script>
+const GAMES = [
+  {name:"Snake", file:"snake.html", icon:"🐍", genre:"Arcade"},
+  {name:"Block Stacker", file:"blockstacker.html", icon:"🧱", genre:"Puzzle"},
+  {name:"2048", file:"2048.html", icon:"🔢", genre:"Puzzle"},
+  {name:"Breakout", file:"breakout.html", icon:"🧨", genre:"Arcade"},
+  {name:"Pong", file:"pong.html", icon:"🏓", genre:"Arcade · 2P"},
+  {name:"Flappy Block", file:"flappy.html", icon:"🐤", genre:"Arcade"},
+  {name:"Space Defender", file:"spacedefender.html", icon:"👾", genre:"Arcade"},
+  {name:"Dino Runner", file:"dinorunner.html", icon:"🦖", genre:"Arcade"},
+  {name:"Whack-a-Mole", file:"whackamole.html", icon:"🔨", genre:"Reflex"},
+  {name:"Memory Match", file:"memory.html", icon:"🧠", genre:"Puzzle"},
+  {name:"Simon Says", file:"simon.html", icon:"🎵", genre:"Reflex"},
+  {name:"Minesweeper", file:"minesweeper.html", icon:"💣", genre:"Puzzle"},
+  {name:"Sliding Puzzle", file:"slidingpuzzle.html", icon:"🧩", genre:"Puzzle"},
+  {name:"Tic Tac Toe", file:"tictactoe.html", icon:"❌", genre:"Strategy · 2P"},
+  {name:"Connect Four", file:"connect4.html", icon:"🔴", genre:"Strategy · 2P"},
+  {name:"Rock Paper Scissors", file:"rps.html", icon:"✊", genre:"vs CPU"},
+  {name:"Hangman", file:"hangman.html", icon:"🔤", genre:"Word"},
+  {name:"Maze Runner", file:"maze.html", icon:"🌀", genre:"Puzzle"},
+  {name:"Reaction Test", file:"reaction.html", icon:"⚡", genre:"Reflex"},
+  {name:"Pizza Clicker", file:"pizzaclicker.html", icon:"🍕", genre:"Clicker"},
+];
+
+function renderGrid(){
+  const grid = document.getElementById("gameGrid");
+  grid.innerHTML = "";
+  GAMES.forEach(g=>{
+    const a = document.createElement("a");
+    a.className = "game-card";
+    a.href = "games/" + g.file;
+    a.innerHTML = `<div class="ico">${g.icon}</div><div class="name">${g.name}</div><div class="genre">${g.genre}</div>`;
+    grid.appendChild(a);
+  });
+  document.getElementById("gameCount").textContent = GAMES.length + " games";
+}
+
+function showUnlocked(){
+  document.getElementById("paywall").style.display = "none";
+  document.getElementById("hub").style.display = "block";
+  renderGrid();
+}
+
+// buy button = deliberately fake, nudges toward promo code
+document.getElementById("buyBtn").addEventListener("click", ()=>{
+  const m = document.getElementById("payMsg");
+  m.textContent = "Payments are unavailable right now — got a promo code instead?";
+  m.className = "msg err";
+});
+
+document.getElementById("promoBtn").addEventListener("click", tryPromo);
+document.getElementById("promoInput").addEventListener("keydown", e=>{
+  if(e.key === "Enter") tryPromo();
+});
+
+function tryPromo(){
+  const input = document.getElementById("promoInput").value;
+  const m = document.getElementById("promoMsg");
+  if(chgValidateCode(input)){
+    chgUnlock();
+    m.textContent = "Code accepted — enjoy the arcade!";
+    m.className = "msg ok";
+    setTimeout(showUnlocked, 500);
+  } else {
+    m.textContent = "That code isn't valid.";
+    m.className = "msg err";
+  }
+}
+
+if(chgIsUnlocked()) showUnlocked();
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hangman — GAMES FOR CENTER HIGH</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  #word{font-family:var(--font-mono);font-size:32px;letter-spacing:10px;margin:20px 0;}
+  #keyboard{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;max-width:460px;}
+  .key{padding:10px 0;background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    cursor:pointer;font-weight:700;text-align:center;font-size:13px;}
+  .key.used{opacity:.3;cursor:default;}
+  .key.correct{border-color:var(--green);color:var(--green);}
+  .key.wrong{border-color:var(--pink);color:var(--pink);}
+</style>
+</head><body>
+<script src="../access.js"></script>
+<script>if(!chgIsUnlocked()){location.href="../index.html";}</script>
+
+<div class="game-top"><a class="back" href="../index.html">← Arcade</a><div class="title">🔤 Hangman</div><div style="width:70px;"></div></div>
+
+<div class="game-stage">
+  <div class="hud"><div class="stat">Wins <b id="wins">0</b></div><div class="stat">Misses left <b id="misses">6</b></div></div>
+  <canvas id="c" width="180" height="180"></canvas>
+  <div id="word"></div>
+  <div id="keyboard"></div>
+  <div class="overlay-msg" id="msg"></div>
+  <button class="mini-btn" id="restart">New word</button>
+</div>
+
+<script>
+const WORDS = ['ARCADE','PIZZA','LAPTOP','HALLWAY','LOCKER','SCIENCE','BACKPACK','FOOTBALL','CAFETERIA','KEYBOARD','HOMEWORK','BASKETBALL','WEEKEND','PENCIL','CHEMISTRY'];
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const wordEl=document.getElementById('word'), missesEl=document.getElementById('misses'), winsEl=document.getElementById('wins'), msg=document.getElementById('msg'), kb=document.getElementById('keyboard');
+let wins = parseInt(localStorage.getItem('chg_hangman_wins')||'0'); winsEl.textContent=wins;
+let word, guessed, misses, over;
+const MAXMISS=6;
+
+function reset(){
+  word = WORDS[Math.floor(Math.random()*WORDS.length)];
+  guessed=new Set(); misses=0; over=false; msg.textContent='';
+  missesEl.textContent = MAXMISS;
+  renderWord(); renderKeyboard(); drawGallows();
+}
+function renderWord(){
+  wordEl.textContent = word.split('').map(l=>guessed.has(l)?l:'_').join(' ');
+}
+function renderKeyboard(){
+  kb.innerHTML='';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(l=>{
+    const b=document.createElement('div');
+    b.className='key'+(guessed.has(l)?' used':'');
+    if(guessed.has(l)) b.classList.add(word.includes(l)?'correct':'wrong');
+    b.textContent=l;
+    b.addEventListener('click', ()=>guess(l));
+    kb.appendChild(b);
+  });
+}
+function guess(l){
+  if(over || guessed.has(l)) return;
+  guessed.add(l);
+  if(!word.includes(l)){
+    misses++; missesEl.textContent = MAXMISS-misses;
+    drawGallows();
+    if(misses>=MAXMISS){ over=true; msg.textContent='Out of tries — word was '+word; }
+  } else if(word.split('').every(c=>guessed.has(c))){
+    over=true; msg.textContent='You got it! 🎉';
+    wins++; localStorage.setItem('chg_hangman_wins',wins); winsEl.textContent=wins;
+  }
+  renderWord(); renderKeyboard();
+}
+function drawGallows(){
+  ctx.fillStyle='#05060d'; ctx.fillRect(0,0,180,180);
+  ctx.strokeStyle='#e9e8f5'; ctx.lineWidth=3; ctx.beginPath();
+  ctx.moveTo(20,170); ctx.lineTo(100,170);
+  ctx.moveTo(40,170); ctx.lineTo(40,20);
+  ctx.moveTo(40,20); ctx.lineTo(120,20);
+  ctx.moveTo(120,20); ctx.lineTo(120,40);
+  ctx.stroke();
+  ctx.strokeStyle='#ff2e88';
+  const parts=[
+    ()=>{ ctx.beginPath(); ctx.arc(120,55,14,0,7); ctx.stroke(); },
+    ()=>{ ctx.beginPath(); ctx.moveTo(120,69); ctx.lineTo(120,110); ctx.stroke(); },
+    ()=>{ ctx.beginPath(); ctx.moveTo(120,80); ctx.lineTo(100,95); ctx.stroke(); },
+    ()=>{ ctx.beginPath(); ctx.moveTo(120,80); ctx.lineTo(140,95); ctx.stroke(); },
+    ()=>{ ctx.beginPath(); ctx.moveTo(120,110); ctx.lineTo(102,140); ctx.stroke(); },
+    ()=>{ ctx.beginPath(); ctx.moveTo(120,110); ctx.lineTo(138,140); ctx.stroke(); },
+  ];
+  for(let i=0;i<misses;i++) parts[i]();
+}
+document.addEventListener('keydown', e=>{
+  const l=e.key.toUpperCase();
+  if(l.length===1 && l>='A' && l<='Z') guess(l);
+});
+document.getElementById('restart').addEventListener('click', reset);
+reset();
+</script>
+</body></html>

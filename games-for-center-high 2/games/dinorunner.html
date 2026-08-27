@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dino Runner — GAMES FOR CENTER HIGH</title>
+<link rel="stylesheet" href="../style.css">
+</head><body>
+<script src="../access.js"></script>
+<script>if(!chgIsUnlocked()){location.href="../index.html";}</script>
+
+<div class="game-top"><a class="back" href="../index.html">← Arcade</a><div class="title">🦖 Dino Runner</div><div style="width:70px;"></div></div>
+
+<div class="game-stage">
+  <div class="hud"><div class="stat">Score <b id="score">0</b></div><div class="stat">Best <b id="best">0</b></div></div>
+  <canvas id="c" width="500" height="220"></canvas>
+  <div class="overlay-msg" id="msg">Space / tap / click to jump</div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const W=cv.width,H=cv.height, GROUND=H-30;
+const scoreEl=document.getElementById('score'), bestEl=document.getElementById('best'), msg=document.getElementById('msg');
+let best=parseInt(localStorage.getItem('chg_dino_best')||'0'); bestEl.textContent=best;
+let dino, obstacles, speed, score, alive, tstep;
+
+function reset(){
+  dino={x:40,y:GROUND-30,w:26,h:30,vy:0,jumping:false};
+  obstacles=[]; speed=5; score=0; alive=true; tstep=0;
+  msg.textContent='Space / tap / click to jump';
+  scoreEl.textContent=0;
+}
+function jump(){
+  if(!alive){ reset(); return; }
+  if(!dino.jumping){ dino.vy=-10; dino.jumping=true; }
+}
+document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); jump(); } });
+cv.addEventListener('mousedown', jump);
+cv.addEventListener('touchstart', e=>{ e.preventDefault(); jump(); }, {passive:false});
+
+function step(){
+  if(alive){
+    tstep++;
+    dino.vy+=0.6; dino.y+=dino.vy;
+    if(dino.y>GROUND-dino.h){ dino.y=GROUND-dino.h; dino.vy=0; dino.jumping=false; }
+
+    obstacles.forEach(o=>o.x-=speed);
+    obstacles=obstacles.filter(o=>o.x>-30);
+    if(tstep%Math.max(55-Math.floor(speed*2),30)===0){
+      obstacles.push({x:W+20,w:16+Math.random()*14,h:24+Math.random()*20});
+    }
+    obstacles.forEach(o=>{
+      if(dino.x+dino.w>o.x && dino.x<o.x+o.w && dino.y+dino.h>GROUND-o.h){
+        alive=false;
+        if(score>best){ best=score; localStorage.setItem('chg_dino_best',best); bestEl.textContent=best; }
+        msg.textContent='Game over — score '+score+' — tap to retry';
+      }
+    });
+    score++; scoreEl.textContent=Math.floor(score/5);
+    speed = 5 + Math.floor(score/400)*0.6;
+  }
+  draw();
+  requestAnimationFrame(step);
+}
+function draw(){
+  ctx.fillStyle='#05060d'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#2a2f57'; ctx.beginPath(); ctx.moveTo(0,GROUND); ctx.lineTo(W,GROUND); ctx.stroke();
+  ctx.fillStyle='#ffd23f'; ctx.fillRect(dino.x,dino.y,dino.w,dino.h);
+  ctx.fillStyle='#38ffab'; obstacles.forEach(o=>ctx.fillRect(o.x,GROUND-o.h,o.w,o.h));
+}
+reset();
+step();
+</script>
+</body></html>
