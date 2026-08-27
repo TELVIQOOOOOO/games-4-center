@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Runner — GAMES FOR CENTER HIGH</title>
+<link rel="stylesheet" href="../style.css">
+</head><body>
+<script src="../access.js"></script>
+<script>if(!chgIsUnlocked()){location.href="../index.html";}</script>
+
+<div class="game-top"><a class="back" href="../index.html">← Arcade</a><div class="title">🌀 Maze Runner</div><div style="width:70px;"></div></div>
+
+<div class="game-stage">
+  <div class="hud"><div class="stat">Level <b id="level">1</b></div><div class="stat">Moves <b id="moves">0</b></div></div>
+  <canvas id="c" width="360" height="360"></canvas>
+  <div class="overlay-msg" id="msg"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px;">
+    <button class="mini-btn" id="bU">↑</button>
+    <div style="display:flex;gap:6px;">
+      <button class="mini-btn" id="bL">←</button>
+      <button class="mini-btn" id="bD">↓</button>
+      <button class="mini-btn" id="bR">→</button>
+    </div>
+  </div>
+  <div class="controls-hint">Arrow keys / WASD or the buttons above. Reach the yellow exit.</div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+let SIZE=9, CELL=cv.width/SIZE, level=1, moves=0, player, maze, exit, won;
+const levelEl=document.getElementById('level'), movesEl=document.getElementById('moves'), msg=document.getElementById('msg');
+
+function genMaze(n){
+  const grid = Array.from({length:n},()=>Array(n).fill(1)); // 1 = wall
+  function carve(x,y){
+    grid[y][x]=0;
+    const dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-0.5);
+    dirs.forEach(([dx,dy])=>{
+      const nx=x+dx, ny=y+dy;
+      if(nx>0&&nx<n&&ny>0&&ny<n&&grid[ny][nx]===1){
+        grid[y+dy/2][x+dx/2]=0;
+        carve(nx,ny);
+      }
+    });
+  }
+  carve(1,1);
+  return grid;
+}
+function newLevel(){
+  SIZE = 7 + Math.min(level,6);
+  CELL = cv.width / SIZE;
+  maze = genMaze(SIZE);
+  player = {x:1,y:1};
+  exit = {x: SIZE%2===0?SIZE-2:SIZE-2, y: SIZE%2===0?SIZE-2:SIZE-2};
+  maze[exit.y][exit.x]=0;
+  moves=0; won=false; msg.textContent='';
+  movesEl.textContent=0; levelEl.textContent=level;
+  draw();
+}
+function tryMove(dx,dy){
+  if(won) return;
+  const nx=player.x+dx, ny=player.y+dy;
+  if(nx<0||ny<0||nx>=SIZE||ny>=SIZE||maze[ny][nx]===1) return;
+  player.x=nx; player.y=ny; moves++; movesEl.textContent=moves;
+  if(nx===exit.x && ny===exit.y){
+    won=true; msg.textContent='Level '+level+' cleared! Next level loading...';
+    level++;
+    setTimeout(newLevel, 1000);
+  }
+  draw();
+}
+document.addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  if(k==='arrowup'||k==='w') tryMove(0,-1);
+  else if(k==='arrowdown'||k==='s') tryMove(0,1);
+  else if(k==='arrowleft'||k==='a') tryMove(-1,0);
+  else if(k==='arrowright'||k==='d') tryMove(1,0);
+});
+document.getElementById('bU').addEventListener('click', ()=>tryMove(0,-1));
+document.getElementById('bD').addEventListener('click', ()=>tryMove(0,1));
+document.getElementById('bL').addEventListener('click', ()=>tryMove(-1,0));
+document.getElementById('bR').addEventListener('click', ()=>tryMove(1,0));
+
+function draw(){
+  ctx.fillStyle='#05060d'; ctx.fillRect(0,0,cv.width,cv.height);
+  for(let y=0;y<SIZE;y++) for(let x=0;x<SIZE;x++){
+    if(maze[y][x]===1){ ctx.fillStyle='#2a2f57'; ctx.fillRect(x*CELL,y*CELL,CELL,CELL); }
+  }
+  ctx.fillStyle='#ffd23f'; ctx.fillRect(exit.x*CELL+3,exit.y*CELL+3,CELL-6,CELL-6);
+  ctx.fillStyle='#37f0ff'; ctx.beginPath();
+  ctx.arc(player.x*CELL+CELL/2, player.y*CELL+CELL/2, CELL*0.3, 0, 7); ctx.fill();
+}
+newLevel();
+</script>
+</body></html>

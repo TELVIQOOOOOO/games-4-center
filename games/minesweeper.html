@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper — GAMES FOR CENTER HIGH</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  #board{display:grid;gap:2px;background:#05060d;padding:6px;border-radius:8px;}
+  .cell{width:28px;height:28px;background:#2a2f57;border-radius:3px;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:800;cursor:pointer;user-select:none;font-family:var(--font-mono);}
+  .cell.open{background:#1c2040;cursor:default;}
+  .cell.mine{background:#ff2e88;}
+  .cell.flag{background:#ffd23f22;}
+</style>
+</head><body>
+<script src="../access.js"></script>
+<script>if(!chgIsUnlocked()){location.href="../index.html";}</script>
+
+<div class="game-top"><a class="back" href="../index.html">← Arcade</a><div class="title">💣 Minesweeper</div><div style="width:70px;"></div></div>
+
+<div class="game-stage">
+  <div class="hud"><div class="stat">Mines left <b id="minesLeft">12</b></div></div>
+  <div id="board"></div>
+  <div class="overlay-msg" id="msg"></div>
+  <button class="mini-btn" id="restart">New game</button>
+  <div class="controls-hint">Click to reveal · Right-click (or long-press on touch) to flag</div>
+</div>
+
+<script>
+const COLS=10, ROWS=10, MINES=12;
+const boardEl=document.getElementById('board'), minesLeftEl=document.getElementById('minesLeft'), msg=document.getElementById('msg');
+boardEl.style.gridTemplateColumns = `repeat(${COLS}, 28px)`;
+const NUMCOLORS=['','#37f0ff','#38ffab','#ff2e88','#ffd23f','#a06bff','#ff8a3c','#e9e8f5','#9a9dc4'];
+let grid, revealed, flagged, over, firstClick;
+
+function reset(){
+  grid=[]; revealed=Array.from({length:ROWS},()=>Array(COLS).fill(false));
+  flagged=Array.from({length:ROWS},()=>Array(COLS).fill(false));
+  over=false; firstClick=true; msg.textContent='';
+  minesLeftEl.textContent=MINES;
+  buildEmpty();
+  render();
+}
+function buildEmpty(){
+  grid = Array.from({length:ROWS},()=>Array(COLS).fill(0));
+}
+function placeMines(avoidR,avoidC){
+  let placed=0;
+  while(placed<MINES){
+    const r=Math.floor(Math.random()*ROWS), c=Math.floor(Math.random()*COLS);
+    if(grid[r][c]==='M') continue;
+    if(Math.abs(r-avoidR)<=1 && Math.abs(c-avoidC)<=1) continue;
+    grid[r][c]='M'; placed++;
+  }
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(grid[r][c]==='M') continue;
+    let n=0;
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&grid[nr][nc]==='M') n++;
+    }
+    grid[r][c]=n;
+  }
+}
+function reveal(r,c){
+  if(r<0||c<0||r>=ROWS||c>=COLS||revealed[r][c]||flagged[r][c]) return;
+  if(firstClick){ placeMines(r,c); firstClick=false; }
+  revealed[r][c]=true;
+  if(grid[r][c]==='M'){ over=true; revealAll(); msg.textContent='Boom! Game over — New game to retry'; render(); return; }
+  if(grid[r][c]===0){
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) reveal(r+dr,c+dc);
+  }
+  checkWin();
+  render();
+}
+function revealAll(){ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) revealed[r][c]=true; }
+function checkWin(){
+  let hidden=0;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(!revealed[r][c]) hidden++;
+  if(hidden===MINES && !over){ over=true; msg.textContent='You cleared the field! 🎉'; }
+}
+function toggleFlag(r,c){
+  if(revealed[r][c] || over) return;
+  flagged[r][c]=!flagged[r][c];
+  minesLeftEl.textContent = MINES - Object.values(flagged.flat()).filter(Boolean).length;
+  render();
+}
+function render(){
+  boardEl.innerHTML='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const d=document.createElement('div');
+    d.className='cell';
+    if(revealed[r][c]){
+      d.classList.add('open');
+      if(grid[r][c]==='M'){ d.classList.add('mine'); d.textContent='💣'; }
+      else if(grid[r][c]>0){ d.textContent=grid[r][c]; d.style.color=NUMCOLORS[grid[r][c]]; }
+    } else if(flagged[r][c]){
+      d.classList.add('flag'); d.textContent='🚩';
+    }
+    d.addEventListener('click', ()=>{ if(!over) reveal(r,c); else if(!revealed[r][c]) reset(); });
+    d.addEventListener('contextmenu', e=>{ e.preventDefault(); if(!over) toggleFlag(r,c); });
+    let pressTimer;
+    d.addEventListener('touchstart', ()=>{ pressTimer=setTimeout(()=>{ if(!over) toggleFlag(r,c); },450); });
+    d.addEventListener('touchend', ()=>clearTimeout(pressTimer));
+    boardEl.appendChild(d);
+  }
+}
+document.getElementById('restart').addEventListener('click', reset);
+reset();
+</script>
+</body></html>
